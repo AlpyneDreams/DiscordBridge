@@ -69,9 +69,9 @@ public class DiscordBot extends ListenerAdapter {
     private void saveChannelConfig()
     {
         if (channelIds.size() > 0)
-            plugin.getConfig().set("discord-channels", Arrays.asList(channelIds));
+            plugin.getConfig().set("discord-channels", new ArrayList<Long>(channelIds));
         else
-            plugin.getConfig().set("discord.channels", null);
+            plugin.getConfig().set("discord-channels", null);
         plugin.saveConfig();
     }
 

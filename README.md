@@ -1,6 +1,8 @@
 # DiscordBridge
 
-### Running
+Simple Minecraft ⇔ Discord bridge. This plugin uses [JDA](https://github.com/DV8FromTheWorld/JDA) and [discord-webhooks](https://github.com/MinnDevelopment/discord-webhooks).
+
+## Running
 
 Just drop the jar in your `plugins` folder.
 
@@ -10,7 +12,7 @@ Use `>register` in a Discord channel to connect it to Minecraft, and `>unregiste
 
 If the bot does not have the `Manage Webhooks` permission, but `use-webhooks` is enabled then messages will show up without webhook avatar and username.
 
-### Default Config
+## Default Config
 
 ```yaml
 token: 'YOUR_TOKEN_HERE'
@@ -25,6 +27,6 @@ reported-events:
   death: true
 ```
 
-### Building
+## Building
 
 Run the gradle task `shadowJar`. For testing, I use a PaperMC server in `test/Paper`, so running the gradle task `copyJarToPlugins` is a fast way to build the plugin and install it on a test server.

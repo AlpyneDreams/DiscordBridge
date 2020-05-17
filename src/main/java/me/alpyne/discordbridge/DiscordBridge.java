@@ -9,6 +9,7 @@ import javax.security.auth.login.LoginException;
 public class DiscordBridge extends JavaPlugin
 {
     public JDA client;
+    private DiscordBot bot;
 
     @Override
     public void onEnable()
@@ -22,12 +23,14 @@ public class DiscordBridge extends JavaPlugin
             return;
         }
 
+        bot = new DiscordBot(this);
+
         getLogger().info("Connecting to Discord...");
 
         try {
             client = JDABuilder
                     .createDefault(token)
-                    .addEventListeners(new DiscordBot(this))
+                    .addEventListeners(bot)
                     .build();
 
         } catch (LoginException e) {
@@ -36,6 +39,7 @@ public class DiscordBridge extends JavaPlugin
             return;
         }
 
+        getServer().getPluginManager().registerEvents(bot, this);
 
     }
 

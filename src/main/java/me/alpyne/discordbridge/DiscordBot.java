@@ -1,5 +1,6 @@
 package me.alpyne.discordbridge;
 
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.ReadyEvent;
@@ -15,7 +16,7 @@ import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.logging.Logger;
 
-public class DiscordBot extends ListenerAdapter {
+public class DiscordBot extends ListenerAdapter implements Listener {
 
     private DiscordBridge plugin;
     private Logger logger;
@@ -120,6 +121,9 @@ public class DiscordBot extends ListenerAdapter {
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent e)
     {
+        if (e.getAuthor().getIdLong() == plugin.client.getSelfUser().getIdLong()) {
+            return;
+        }
 
         String content = e.getMessage().getContentRaw();
 
@@ -166,5 +170,18 @@ public class DiscordBot extends ListenerAdapter {
             }
         }
 
+    }
+
+    /*==================================================
+     *      Bukkit Event Handlers
+     *==================================================*/
+
+    @EventHandler
+    public void onPlayerChat(AsyncPlayerChatEvent e)
+    {
+        for (MessageChannel channel : channels.values()) {
+
+            channel.sendMessage("**" + e.getPlayer().getDisplayName() + "**: " + e.getMessage()).queue();
+        }
     }
 }

@@ -34,6 +34,7 @@ public class DiscordBot extends ListenerAdapter implements Listener {
     private String commandPrefix;
     private String chatFormat;
     private boolean useWebhooks;
+    private String avatarUrlTemplate;
     private boolean reportJoin;
     private boolean reportLeave;
     private boolean reportDeath;
@@ -51,7 +52,8 @@ public class DiscordBot extends ListenerAdapter implements Listener {
 
         commandPrefix = plugin.getConfig().getString("command-prefix");
         chatFormat = plugin.getConfig().getString("chat-format");
-        useWebhooks = plugin.getConfig().getBoolean("use-webhooks");
+        useWebhooks = plugin.getConfig().getBoolean("webhooks.enabled");
+        avatarUrlTemplate = plugin.getConfig().getString("webhooks.avatar-url");
         reportJoin = plugin.getConfig().getBoolean("reported-events.join");
         reportLeave = plugin.getConfig().getBoolean("reported-events.leave");
         reportDeath = plugin.getConfig().getBoolean("reported-events.death");
@@ -281,8 +283,10 @@ public class DiscordBot extends ListenerAdapter implements Listener {
 
     private void sendMessageWebhooks(UUID playerId, String username, String msg)
     {
+        String avatarUrl = avatarUrlTemplate.replaceAll("\\{uuid}", playerId.toString());
+
         WebhookMessageBuilder builder = new WebhookMessageBuilder();
-        builder.setAvatarUrl("https://crafatar.com/avatars/" + playerId + "?overlay");
+        builder.setAvatarUrl(avatarUrl);
         builder.setUsername(username);
         builder.setContent(msg);
         webhookCluster.broadcast(builder.build());
@@ -325,8 +329,8 @@ public class DiscordBot extends ListenerAdapter implements Listener {
         if (channelIds.contains(e.getChannel().getIdLong())) {
 
             String chatMsg = chatFormat
-                    .replaceAll("%username%", e.getMember().getEffectiveName())
-                    .replaceAll("%message%", e.getMessage().getContentDisplay());
+                    .replaceAll("\\{username}", e.getMember().getEffectiveName())
+                    .replaceAll("\\{message}", e.getMessage().getContentDisplay());
 
             chatMsg = ChatColor.translateAlternateColorCodes('&', chatMsg);
             plugin.getServer().broadcastMessage(chatMsg);

@@ -1,7 +1,9 @@
 token: 'YOUR_TOKEN_HERE'
 command-prefix: '>'
-chat-format: '&f[&3Discord&f] %username%: %message%'
-use-webhooks: true
+chat-format: '&f[&3Discord&f] {username}: {message}'
+webhooks:
+  enabled: true
+  avatar-url: 'https://crafatar.com/avatars/{uuid}?overlay'
 reported-events:
   join: true
   leave: true

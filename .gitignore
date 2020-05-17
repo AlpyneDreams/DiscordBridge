@@ -1,0 +1,15 @@
+
+# Compiled class file
+*.class
+
+# Package Files #
+*.jar
+
+.gradle/
+.idea/
+gradle/
+test/
+build/
+
+gradlew
+gradlew.bat

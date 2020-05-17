@@ -1,0 +1,5 @@
+name: DiscordBridge
+version: 1.0-SNAPSHOT
+author: Alpyne
+main: me.alpyne.discordbridge.DiscordBridge
+api-version: 1.15

@@ -1,0 +1,38 @@
+plugins {
+    id "com.github.johnrengelman.shadow" version "5.2.0"
+}
+
+apply plugin: 'java'
+
+group = 'me.alpyne.discordbridge'
+version = '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    jcenter()
+    maven {
+        name = 'spigotmc-repo'
+        url = 'https://hub.spigotmc.org/nexus/content/groups/public/'
+    }
+}
+
+dependencies {
+    shadow 'org.bukkit:bukkit:1.15.2-R0.1-SNAPSHOT'
+    compile ('net.dv8tion:JDA:4.1.1_152') {
+        exclude module: 'opus-java'
+    }
+}
+
+shadowJar {
+    classifier = ''
+}
+
+task copyJarToPlugins(type: Copy) {
+    from shadowJar
+    into 'test/Paper/plugins'
+}
+
+

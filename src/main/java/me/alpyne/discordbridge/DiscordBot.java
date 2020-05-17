@@ -9,7 +9,10 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.bukkit.ChatColor;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import javax.annotation.Nonnull;
@@ -20,10 +23,15 @@ public class DiscordBot extends ListenerAdapter implements Listener {
 
     private DiscordBridge plugin;
     private Logger logger;
+
+    // Config File Values
     private String commandPrefix;
     private String chatFormat;
-    private HashSet<Long> channelIds = new HashSet<>();
+    private boolean reportJoin;
+    private boolean reportLeave;
+    private boolean reportDeath;
 
+    private HashSet<Long> channelIds = new HashSet<>();
     private HashMap<Long, MessageChannel> channels = new HashMap<>();
 
     public DiscordBot(DiscordBridge plugin)
@@ -31,8 +39,11 @@ public class DiscordBot extends ListenerAdapter implements Listener {
         this.plugin = plugin;
         this.logger = plugin.getLogger();
 
-        this.commandPrefix = plugin.getConfig().getString("command-prefix");
-        this.chatFormat = plugin.getConfig().getString("chat-format");
+        commandPrefix = plugin.getConfig().getString("command-prefix");
+        chatFormat = plugin.getConfig().getString("chat-format");
+        reportJoin = plugin.getConfig().getBoolean("reported-events.join");
+        reportLeave = plugin.getConfig().getBoolean("reported-events.leave");
+        reportDeath = plugin.getConfig().getBoolean("reported-events.death");
     }
 
     /**
@@ -104,6 +115,18 @@ public class DiscordBot extends ListenerAdapter implements Listener {
         logger.info("Unregistered listening channel: #" + channel.getName() + " (" + channel.getId()  + ")");
 
         saveChannelConfig();
+    }
+
+    /**
+     * Send a message to all registered channels.
+     * @param msg Raw string message
+     */
+    private void sendMessageAll(String msg)
+    {
+        for (MessageChannel channel : channels.values())
+        {
+            channel.sendMessage(msg).queue();
+        }
     }
 
     /*==================================================
@@ -179,9 +202,38 @@ public class DiscordBot extends ListenerAdapter implements Listener {
     @EventHandler
     public void onPlayerChat(AsyncPlayerChatEvent e)
     {
-        for (MessageChannel channel : channels.values()) {
-
-            channel.sendMessage("**" + e.getPlayer().getDisplayName() + "**: " + e.getMessage()).queue();
-        }
+        sendMessageAll("**" + e.getPlayer().getDisplayName() + "**: " + e.getMessage());
     }
+
+    @EventHandler
+    public void onPlayerLogin(PlayerLoginEvent e)
+    {
+        if (!reportJoin) return;
+        if (e.getResult() != PlayerLoginEvent.Result.ALLOWED) return;
+
+        sendMessageAll(e.getPlayer().getDisplayName() + " joined the game");
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent e)
+    {
+        if (!reportLeave) return;
+
+        if (e.getQuitMessage() != null)
+            sendMessageAll(ChatColor.stripColor(e.getQuitMessage()));
+        else
+            sendMessageAll(e.getPlayer().getDisplayName() + " left the game");
+    }
+
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent e)
+    {
+        if (!reportDeath) return;
+
+        if (e.getDeathMessage() != null)
+            sendMessageAll(ChatColor.stripColor(e.getDeathMessage()));
+        else
+            sendMessageAll(e.getEntity().getDisplayName() + " died");
+    }
+
 }

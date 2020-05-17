@@ -1,3 +1,7 @@
 token: 'YOUR_TOKEN_HERE'
 command-prefix: '>'
 chat-format: '&f[&3Discord&f] %username%: %message%'
+reported-events:
+  join: true
+  leave: true
+  death: true

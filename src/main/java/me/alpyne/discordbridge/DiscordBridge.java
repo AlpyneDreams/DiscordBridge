@@ -8,7 +8,7 @@ import javax.security.auth.login.LoginException;
 
 public class DiscordBridge extends JavaPlugin
 {
-    private JDA client;
+    public JDA client;
 
     @Override
     public void onEnable()

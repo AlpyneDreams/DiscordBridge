@@ -1,37 +1,37 @@
 package me.alpyne.discordbridge;
 
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.bukkit.ChatColor;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class DiscordBot extends ListenerAdapter {
 
-    private JavaPlugin plugin;
+    private DiscordBridge plugin;
     private Logger logger;
     private String commandPrefix;
     private String chatFormat;
+    private HashSet<Long> channelIds = new HashSet<>();
 
-    private HashSet<Long> channels = new HashSet<>();
+    private HashMap<Long, MessageChannel> channels = new HashMap<>();
 
-    public DiscordBot(JavaPlugin plugin)
+    public DiscordBot(DiscordBridge plugin)
     {
         this.plugin = plugin;
         this.logger = plugin.getLogger();
 
         this.commandPrefix = plugin.getConfig().getString("command-prefix");
         this.chatFormat = plugin.getConfig().getString("chat-format");
-
-        loadChannelConfig();
     }
 
     /**
@@ -41,19 +41,35 @@ public class DiscordBot extends ListenerAdapter {
     {
         List<Long> listenerChannels = plugin.getConfig().getLongList("discord-channels");
         for (long id : listenerChannels) {
-            if (!channels.add(id)) {
+
+            if (!channelIds.add(id)) {
                 logger.warning("Duplicate Discord channel ID: '" + id + "'");
+                continue;
             }
+
+            // Find the channel
+            MessageChannel channel = plugin.client.getTextChannelById(id);
+            if (channel == null) {
+                // Try private channel instead
+                channel = plugin.client.getPrivateChannelById(id);
+
+                if (channel == null) {
+                    logger.warning("Could not find Discord channel with ID: '" + id + "'");
+                    continue;
+                }
+            }
+
+            channels.put(id, channel);
         }
 
-        if (channels.size() > 0)
-            logger.info("Loaded " + channels.size() + " Discord channels from config.");
+        if (channelIds.size() > 0)
+            logger.info("Loaded " + channels.size() + " of " + channelIds.size() + " Discord channels from config.");
     }
 
     private void saveChannelConfig()
     {
-        if (channels.size() > 0)
-            plugin.getConfig().set("discord-channels", Arrays.asList(channels));
+        if (channelIds.size() > 0)
+            plugin.getConfig().set("discord-channels", Arrays.asList(channelIds));
         else
             plugin.getConfig().set("discord.channels", null);
         plugin.saveConfig();
@@ -61,10 +77,12 @@ public class DiscordBot extends ListenerAdapter {
 
     private void addChannel(MessageChannel channel)
     {
-        if (!channels.add(channel.getIdLong())) {
+        if (!channelIds.add(channel.getIdLong())) {
             channel.sendMessage("This channel is already registered as a listening channel.").queue();
             return;
         }
+
+        channels.put(channel.getIdLong(), channel);
 
         channel.sendMessage("Successfully registered <#" + channel.getId() + "> as a listening channel.").queue();
         logger.info("Registered new listening channel: #" + channel.getName() + " (" + channel.getId()  + ")");
@@ -74,10 +92,12 @@ public class DiscordBot extends ListenerAdapter {
 
     private void removeChannel(MessageChannel channel)
     {
-        if (!channels.remove(channel.getIdLong())) {
+        if (!channelIds.remove(channel.getIdLong())) {
             channel.sendMessage("This channel is not registered as a listening channel.").queue();
             return;
         }
+
+        channels.remove(channel.getIdLong());
 
         channel.sendMessage("Successfully unregistered <#" + channel.getId()  + ">").queue();
         logger.info("Unregistered listening channel: #" + channel.getName() + " (" + channel.getId()  + ")");
@@ -85,10 +105,16 @@ public class DiscordBot extends ListenerAdapter {
         saveChannelConfig();
     }
 
+    /*==================================================
+     *      Discord Event Handlers
+     *==================================================*/
+
     @Override
     public void onReady(@Nonnull ReadyEvent e)
     {
         logger.info("Connected to Discord and ready.");
+
+        loadChannelConfig();
     }
 
     @Override
@@ -98,7 +124,7 @@ public class DiscordBot extends ListenerAdapter {
         String content = e.getMessage().getContentRaw();
 
 
-        if (channels.contains(e.getChannel().getIdLong())) {
+        if (channelIds.contains(e.getChannel().getIdLong())) {
 
             String chatMsg = chatFormat
                     .replaceAll("%username%", e.getMember().getEffectiveName())

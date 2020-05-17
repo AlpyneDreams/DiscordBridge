@@ -213,9 +213,10 @@ public class DiscordBot extends ListenerAdapter implements Listener {
         }
     }
 
-    private void removeWebhook(Webhook webhook)
+    private void removeWebhook(long channelId, Webhook webhook)
     {
         try {
+            webhooks.remove(channelId);
             // Delete webhook
             webhook.delete();
         } catch (InsufficientPermissionException e) {
@@ -223,7 +224,7 @@ public class DiscordBot extends ListenerAdapter implements Listener {
             TextChannel channel = webhook.getChannel();
             logger.warning(
                     "Failed to delete webhook with ID '" + webhook.getId() + "' in #" + channel.getName() +
-                            " (" + channel.getId() + "). Bot does not have permission."
+                            " (" + channelId + "). Bot does not have permission."
             );
             channel.sendMessage(
                     "Failed to delete webhook, the bot doesn't have the **Manage Webhooks** permission."
@@ -252,19 +253,21 @@ public class DiscordBot extends ListenerAdapter implements Listener {
 
     private void removeChannel(MessageChannel channel)
     {
-        if (!channelIds.remove(channel.getIdLong())) {
+        long channelId = channel.getIdLong();
+
+        if (!channelIds.remove(channelId)) {
             channel.sendMessage("This channel is not registered as a listening channel.").queue();
             return;
         }
 
-        if (webhooks.containsKey(channel.getIdLong())) {
-            removeWebhook(webhooks.get(channel.getIdLong()));
+        if (webhooks.containsKey(channelId)) {
+            removeWebhook(channelId, webhooks.get(channelId));
         }
 
-        channels.remove(channel.getIdLong());
+        channels.remove(channelId);
 
-        channel.sendMessage("Successfully unregistered <#" + channel.getId()  + ">").queue();
-        logger.info("Unregistered listening channel: #" + channel.getName() + " (" + channel.getId()  + ")");
+        channel.sendMessage("Successfully unregistered <#" + channelId  + ">").queue();
+        logger.info("Unregistered listening channel: #" + channel.getName() + " (" + channelId  + ")");
 
         saveChannelConfig();
     }
